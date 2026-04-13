@@ -11,7 +11,7 @@
 #define SS_PIN 10
 #define RST_PIN 5
 
-//Define Pin the Servo Is connected tp
+//Define Pin the Servo Is connected to
 #define SERVO_PIN A5
 
 #define ALARM_PIN 3
