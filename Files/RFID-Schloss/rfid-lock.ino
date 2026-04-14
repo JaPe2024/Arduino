@@ -14,6 +14,7 @@
 //Define Pin the Servo Is connected to
 #define SERVO_PIN A5
 
+//Define Alarm (piezo pin)
 #define ALARM_PIN 3
 
 //Define Rfid parameters
