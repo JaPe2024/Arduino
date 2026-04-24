@@ -14,6 +14,7 @@
 //Define Pin the Servo Is connected to
 #define SERVO_PIN A5
 
+//Define Alarm (piezo pin)
 #define ALARM_PIN 3
 
 //Define Rfid parameters
@@ -69,6 +70,8 @@ bool benutzt[numFragen] = { false };  // Array which stores already asked questi
 int button1 = 1;                      // Button1 Pin define
 int button2 = 2;                      // Button2 Pin define
 int button3 = 3;                      // Button3 Pin define
+
+//Define Servo
 Servo servo;
 
 //Define interger type
@@ -152,7 +155,6 @@ void loop() {
         lcd.setCursor(0,1);
         lcd.print("Nr");
         lcd.print(failed_attempts);
-        lcd.print("");
         for (int i = 0; i < rfid.uid.size; i++) {
           Serial.print(rfid.uid.uidByte[i] < 0x10 ? " 0" : " ");
           Serial.print(rfid.uid.uidByte[i], HEX);
@@ -185,8 +187,6 @@ void masterkey() {
   lcd.setCursor(0, 1);
   lcd.print("Zugang gewährt");
   turnServo(5, 90, 0);
-
-  delay(2000);
 
   lcd.clear();
   lcd.setCursor(0, 0);
