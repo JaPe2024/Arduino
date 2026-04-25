@@ -11,10 +11,9 @@
 #define SS_PIN 10
 #define RST_PIN 5
 
-//Define Pin the Servo Is connected to
-#define SERVO_PIN A5
+//Define Pin the Servo Is connected tp
+#define SERVO_PIN A1
 
-//Define Alarm (piezo pin)
 #define ALARM_PIN 3
 
 //Define Rfid parameters
@@ -25,8 +24,8 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 
 //Allowed Key UIDs, Erlaubte Schlüssel UIDs
-byte masterkeyUID[4] = {};
-byte fragenUID2[4] = {};
+byte masterkeyUID[4] = {0x01, 0x02, 0x03, 0x04};
+byte fragenUID2[4] = {0x11, 0x22, 0x33,0x44};
 
 //Create struct that defines how a question(arry part) should look like
 struct Frage {
@@ -62,16 +61,15 @@ Frage fragen[] = {
 };
 
 //Total number of questions
-const int numFragen = sizeof(fragen) / sizeof(fragen[0]);
+const int numFragen = sizeof(fragen) / sizeof(fragen[0]);  
 int failed_attempts = 0;
 bool alarm_reset = false;
 bool alarm_fragen_reset = true;
+bool alarm_durch_fragen = false;
 bool benutzt[numFragen] = { false };  // Array which stores already asked questions
-int button1 = 1;                      // Button1 Pin define
-int button2 = 2;                      // Button2 Pin define
-int button3 = 3;                      // Button3 Pin define
-
-//Define Servo
+int button1 = 7;                      // Button1 Pin define
+int button2 = 8;                      // Button2 Pin define
+int button3 = 6;                      // Button3 Pin define
 Servo servo;
 
 //Define interger type
@@ -97,9 +95,9 @@ int warteAufButton() {
 }
 
 void setup() {
-  pinMode(button1, INPUT);
-  pinMode(button2, INPUT);
-  pinMode(button3, INPUT);
+  pinMode(button1, INPUT_PULLUP);
+  pinMode(button2, INPUT_PULLUP);
+  pinMode(button3, INPUT_PULLUP);
   Serial.begin(9600);
   SPI.begin();      // initialize SPI bus
   rfid.PCD_Init();  // initialize MFRC522
@@ -125,36 +123,43 @@ void loop() {
       MFRC522::PICC_Type picc_type = rfid.PICC_GetType(rfid.uid.sak);
 
       //Check if presented Key is MasterKey
-      if (rfid.uid.uidByte[0] == masterkeyUID[0] &&
-          rfid.uid.uidByte[1] == masterkeyUID[1] &&
-          rfid.uid.uidByte[2] == masterkeyUID[2] &&
+      if (rfid.uid.uidByte[0] == masterkeyUID[0] && 
+          rfid.uid.uidByte[1] == masterkeyUID[1] && 
+          rfid.uid.uidByte[2] == masterkeyUID[2] && 
           rfid.uid.uidByte[3] == masterkeyUID[3]) {
         Serial.println("Master Schlüssel");
-        resetAlarm("MasterKey");
+        resetAlarm("m");
         masterkey();
         } // Check if presented Key is FragenKey
       else if (rfid.uid.uidByte[0] == fragenUID2[0] &&
-               rfid.uid.uidByte[1] == fragenUID2[1] &&
-               rfid.uid.uidByte[2] == fragenUID2[2] &&
+               rfid.uid.uidByte[1] == fragenUID2[1] && 
+               rfid.uid.uidByte[2] == fragenUID2[2] && 
                rfid.uid.uidByte[3] == fragenUID2[3]) {
         Serial.println("Fragen Schlüssel");
-        resetAlarm("FragenKey");
+        resetAlarm("f");
         fragen_stellen();
         }
       //If any other Key which is not allowed
       else {
         failed_attempts++;
         Serial.print("Unzulässiger Schlüssel:");
-        lcd.setCursor(0,0);
+        lcd.clear();
         lcd.print("Unerlaubter");
         lcd.setCursor(0,1);
         lcd.print("Schlüssel");
-        delay(2000);
+        lcd.clear();
+        delay(4000);
         lcd.setCursor(0,0);
-        lcd.print("Falscher Versuch");
+        lcd.print("Versuch");
         lcd.setCursor(0,1);
         lcd.print("Nr");
         lcd.print(failed_attempts);
+        lcd.print("");
+        delay(4000);
+        lcd.clear();
+        lcd.print("Bitte Schlüssel");
+        lcd.setCursor(0,1);
+        lcd.print("Vorlegen");
         for (int i = 0; i < rfid.uid.size; i++) {
           Serial.print(rfid.uid.uidByte[i] < 0x10 ? " 0" : " ");
           Serial.print(rfid.uid.uidByte[i], HEX);
@@ -162,6 +167,7 @@ void loop() {
         Serial.println();
 
         if (failed_attempts >= 3) {
+          alarm_durch_fragen = false;
           alarm();
         }
       }
@@ -188,6 +194,8 @@ void masterkey() {
   lcd.print("Zugang gewährt");
   turnServo(5, 90, 0);
 
+  delay(2000);
+
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Bitte Schlüssel");
@@ -197,7 +205,10 @@ void masterkey() {
 
 //Executed if FragenKey is presented
 void fragen_stellen() {
-  lcd.setCursor(0, 0);
+  for (int j = 0; j < numFragen; j++) {
+  benutzt[j] = false;
+  }
+  lcd.clear();
   lcd.print("Fragen Schlüssel");
   delay(2000);
   lcd.clear();
@@ -212,43 +223,66 @@ void fragen_stellen() {
     } while (benutzt[index] == true);
 
     benutzt[index] = true;
-
+    Serial.print("Frage");
     //Ausgewählte Frage anzeigen
-    lcd.setCursor(0, 1);
+    lcd.setCursor(0, 0);
     lcd.print(fragen[index].frage);
-    delay(2000);
+    Serial.print(fragen[index].frage);
 
     //Antworten anzeigen
     clearLCDLine(1);
+    delay(500);
     lcd.print("A: ");
     lcd.print(fragen[index].antwort1);
+    Serial.print(fragen[index].antwort1);
     delay(1500);
 
     clearLCDLine(1);
+    delay(500);
     lcd.print("B: ");
     lcd.print(fragen[index].antwort2);
+    Serial.print(fragen[index].antwort2);
     delay(1500);
 
     clearLCDLine(1);
+    delay(500);
     lcd.print("C: ");
     lcd.print(fragen[index].antwort3);
+    Serial.print(fragen[index].antwort3);
     delay(1500);
 
     //create integer of type warteAufbutton
-    int antwort = warteAufButton();
+    int antwort;
+    antwort = warteAufButton();
 
     if (antwort != fragen[index].richtigeAntwort) {
-      alarm_fragen_reset = false;
+      alarm_durch_fragen = true;
       alarm();
-      break;
+      return;
     } else if (antwort == fragen[index].richtigeAntwort) {
       lcd.clear();
       lcd.setCursor(0, 0);
-      lcd.print("Richtige Antwort");
+      lcd.print("Richtig");
       delay(3000);
       lcd.clear();
     }
   }
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Alle richtig");
+  lcd.setCursor(0, 1);
+  lcd.print("Tuer offen");
+
+  turnServo(5, 90, 0);
+
+  delay(2000);
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Bitte Schlüssel");
+  lcd.setCursor(0, 1);
+  lcd.print("Präsentieren");
 }
 
 //Trigger Alarm
@@ -262,16 +296,18 @@ void alarm() {
 }
 
 //Reset Alarm
-void resetAlarm(String key) {
-  if (key == "MasterKey" || (key == "FragenKey" && !alarm_fragen_reset))  //only if MasterKey or (Fragen key and alarm not executed by Fragen)
+void resetAlarm(char key) {
+  if (key == "m" || (key == "f" && alarm_durch_fragen == false))  //only if MasterKey or FragenKey if alarm was not triggered by questions
   {
     //set alarm to stop(reset)
-    alarm_reset = true;
+    alarm_reset = true;  
     delay(2000);
     //alarm can be triggered again
-    alarm_reset = false;
+    alarm_reset = false;  
+    alarm_fragen_reset = true;
+    alarm_durch_fragen = false;
     //reset number of wrong key attempts
-    failed_attempts = 0;
+    failed_attempts = 0;  
   }
   //If Reset is locked because alarm was triggered by fragen or other influence
   else {
@@ -281,7 +317,7 @@ void resetAlarm(String key) {
     lcd.print("erlaubt");
   }
 }
-//                    Utils                       \\
+//                    Utils                       \\ 
 
 //Clears a specified line of the LCD Display
 void clearLCDLine(int line) {
@@ -289,4 +325,5 @@ void clearLCDLine(int line) {
   for (int i = 0; i < 16; i++) {
     lcd.print(" ");
   }
+  lcd.setCursor(0, line);
 }
