@@ -16,12 +16,20 @@
 
 #define ALARM_PIN 3
 
+
+#define ALARM_PIN 3
+
+#define button1 7                   // Button1 Pin define
+#define button2 8                   // Button2 Pin define
+#define button3 6                   // Button3 Pin define
+
+Servo servo;
+
 //Define Rfid parameters
 MFRC522 rfid(SS_PIN, RST_PIN);
 
 //Define Liquid Crystal parameters
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-
 
 //Allowed Key UIDs, Erlaubte Schlüssel UIDs
 byte masterkeyUID[4] = {0x01, 0x02, 0x03, 0x04};
@@ -67,10 +75,6 @@ bool alarm_reset = false;
 bool alarm_fragen_reset = true;
 bool alarm_durch_fragen = false;
 bool benutzt[numFragen] = { false };  // Array which stores already asked questions
-int button1 = 7;                      // Button1 Pin define
-int button2 = 8;                      // Button2 Pin define
-int button3 = 6;                      // Button3 Pin define
-Servo servo;
 
 //Define interger type
 int warteAufButton() {
@@ -112,7 +116,6 @@ void setup() {
   servo.write(0);  // rotate servo motor to 0°
 
   randomSeed(analogRead(A0));
-
 
   Serial.println("Tap RFID/NFC Tag on reader");
 }
@@ -327,3 +330,6 @@ void clearLCDLine(int line) {
   }
   lcd.setCursor(0, line);
 }
+
+
+
