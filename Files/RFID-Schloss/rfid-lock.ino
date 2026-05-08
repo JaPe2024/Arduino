@@ -46,26 +46,26 @@ struct Frage {
 
 //Define questions in an array with array parts consisting of Fragen structure
 Frage fragen[] = {
-  { "aaaaaaaaaaa",
-    "aaaaaa",
-    "aaaaa",
-    "aaaaaaa",
+  { "Wie Alt ist Jan?",
+    "16 ",
+    "15",
+    "13",
     1 },
-  { "aaaaaaaaaaa",
-    "aaaaaa",
-    "aaaaa",
-    "aaaaaaa",
+  { "Erdbeere?",
+    "Beere",
+    "Sammelnuss",
+    "Steinfrucht",
+    2 },
+  { "Wie alt ist BMS?",
+    "Von 1830",
+    "Von 1920",
+    "2005",
     1 },
-  { "aaaaaaaaaaa",
-    "aaaaaa",
-    "aaaaa",
-    "aaaaaaa",
-    1 },
-  { "aaaaaaaaaaa",
-    "aaaaaa",
-    "aaaaa",
-    "aaaaaaa",
-    1 }
+  { "Zweitname Pastor?",
+    "Heinrich",
+    "Otto",
+    "Josef",
+    3 }
 };
 
 //Total number of questions
